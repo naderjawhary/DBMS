@@ -50,11 +50,11 @@ function TreeNode() {
       {measurement && threshold && (
         <div className="children">
           <div className="child">
-            <div className="child-label">≤ {threshold}</div>
+            <div className="child-label">&le; {threshold}</div>
             <TreeNode />
           </div>
           <div className="child">
-            <div className="child-label"> {threshold}</div>
+            <div className="child-label">&gt; {threshold}</div>
             <TreeNode />
           </div>
         </div>
