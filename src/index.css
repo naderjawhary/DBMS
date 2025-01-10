@@ -1,0 +1,134 @@
+.node-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.node {
+  border: 2px solid #ccc;
+  padding: 10px;
+  width: 200px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.children {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 100px;  /* Increased gap between children */
+  margin-top: 40px; /* Space for the connecting lines */
+}
+
+/* Add connecting lines */
+.children::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  height: 20px;
+  width: 2px;
+  background: #ccc;
+}
+
+.child {
+  position: relative;
+}
+
+.child::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 100px;  /* Width of horizontal line */
+  height: 2px;
+  background: #ccc;
+}
+
+.child:first-child::before {
+  left: 50%;
+}
+
+.child:last-child::before {
+  right: 50%;
+  left: auto;
+}
+
+.child-label {
+  color: #666;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.node-input, .threshold-input {
+  width: 100%;
+  padding: 5px;
+}
+
+.container {
+  padding: 20px;
+}
+
+.main-content {
+  display: flex;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.measurements-panel {
+  width: 250px;
+  border: 1px solid #ccc;
+  padding: 20px;
+  border-radius: 4px;
+}
+
+.measurements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.measurement-item {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.measurement-item:hover {
+  background-color: #f0f0f0;
+}
+
+.tree-container {
+  flex: 1;
+}
+
+.node-empty {
+  border: 2px dashed #ccc;
+  background: #f9f9f9;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-placeholder {
+  color: #666;
+  text-align: center;
+}
+
+.measurement-display {
+  padding: 5px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.node.node-empty:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
