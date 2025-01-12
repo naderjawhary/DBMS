@@ -16,6 +16,8 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+app.use('/api/trees', require('./routes/trees'));
+
 // Basic route for testing
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Backend is running!' });

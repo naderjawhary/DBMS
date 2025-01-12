@@ -1,8 +1,26 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react'
 
-function TreeNode() {
+const TreeNode = forwardRef((props, ref) => {
   const [measurement, setMeasurement] = useState(null)
   const [threshold, setThreshold] = useState('')
+  const leftChildRef = useRef(null)
+  const rightChildRef = useRef(null)
+
+  const getNodeData = () => {
+    const nodeData = {
+      measurement: measurement,
+      threshold: threshold ? parseFloat(threshold) : null,
+      children: {
+        left: leftChildRef.current?.getNodeData() || null,
+        right: rightChildRef.current?.getNodeData() || null
+      }
+    }
+    return nodeData
+  }
+
+  useImperativeHandle(ref, () => ({
+    getNodeData
+  }))
 
   const handleDragOver = (e) => {
     e.preventDefault()
@@ -51,16 +69,16 @@ function TreeNode() {
         <div className="children">
           <div className="child">
             <div className="child-label">&le; {threshold}</div>
-            <TreeNode />
+            <TreeNode ref={leftChildRef} />
           </div>
           <div className="child">
             <div className="child-label">&gt; {threshold}</div>
-            <TreeNode />
+            <TreeNode ref={rightChildRef} />
           </div>
         </div>
       )}
     </div>
   )
-}
+})
 
 export default TreeNode
