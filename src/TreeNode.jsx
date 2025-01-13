@@ -1,10 +1,17 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react'
+import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
 
 const TreeNode = forwardRef((props, ref) => {
   const [measurement, setMeasurement] = useState(null)
   const [threshold, setThreshold] = useState('')
   const leftChildRef = useRef(null)
   const rightChildRef = useRef(null)
+
+  useEffect(() => {
+    if (props.nodeData) {
+      setMeasurement(props.nodeData.measurement)
+      setThreshold(props.nodeData.threshold?.toString() || '')
+    }
+  }, [props.nodeData])
 
   const getNodeData = () => {
     const nodeData = {
@@ -69,11 +76,17 @@ const TreeNode = forwardRef((props, ref) => {
         <div className="children">
           <div className="child">
             <div className="child-label">&le; {threshold}</div>
-            <TreeNode ref={leftChildRef} />
+            <TreeNode 
+              ref={leftChildRef}
+              nodeData={props.nodeData?.children?.left}
+            />
           </div>
           <div className="child">
             <div className="child-label">&gt; {threshold}</div>
-            <TreeNode ref={rightChildRef} />
+            <TreeNode 
+              ref={rightChildRef}
+              nodeData={props.nodeData?.children?.right}
+            />
           </div>
         </div>
       )}
