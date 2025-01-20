@@ -17,6 +17,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/trees', require('./routes/trees'));
+app.use('/api/athletes', require('./routes/athletes'));
+app.use('/api/measurements', require('./routes/measurements'));
+
 
 // Basic route for testing
 app.get('/api/test', (req, res) => {
