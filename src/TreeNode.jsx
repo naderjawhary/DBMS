@@ -1,10 +1,12 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
+import { fetchSplitCounts } from './api';
 
 const TreeNode = forwardRef((props, ref) => {
   const [measurement, setMeasurement] = useState(null);
   const [threshold, setThreshold] = useState('');
   const leftChildRef = useRef(null);
   const rightChildRef = useRef(null);
+  const [splitCounts, setSplitCounts] = useState({ leftCount: 0, rightCount: 0 });
 
   useEffect(() => {
     if (props.nodeData) {
@@ -13,20 +15,36 @@ const TreeNode = forwardRef((props, ref) => {
     }
   }, [props.nodeData]);
 
+  useEffect(() => {
+  const updateSplitCounts = async () => {
+    if (measurement && threshold) {
+      try {
+        console.log('Fetching split counts for:', measurement.id, threshold);
+        const counts = await fetchSplitCounts(measurement.id, threshold);
+        console.log('Fetched split counts:', counts);
+        setSplitCounts(counts);
+      } catch (error) {
+        console.error('Error fetching split counts:', error);
+      }
+    }
+  };
+    updateSplitCounts();
+  }, [measurement, threshold]);
+
   const getNodeData = () => {
     const nodeData = {
       measurement: measurement,
       threshold: threshold ? parseFloat(threshold) : null,
       children: {
         left: leftChildRef.current?.getNodeData() || null,
-        right: rightChildRef.current?.getNodeData() || null
-      }
+        right: rightChildRef.current?.getNodeData() || null,
+      },
     };
     return nodeData;
   };
 
   useImperativeHandle(ref, () => ({
-    getNodeData
+    getNodeData,
   }));
 
   const handleDragOver = (e) => {
@@ -74,16 +92,24 @@ const TreeNode = forwardRef((props, ref) => {
       </div>
 
       {measurement && threshold && (
-        <div className="row mt-3">
-          <div className="col-md-6">
-            <div className="text-center text-success">&le; {threshold}</div>
-            <TreeNode ref={leftChildRef} nodeData={props.nodeData?.children?.left} />
+        <>
+          <div className="text-center mt-3">
+            <p>Split Athletes:</p>
+            <p>&le; {threshold}: {splitCounts.leftCount}</p>
+            <p>&gt; {threshold}: {splitCounts.rightCount}</p>
           </div>
-          <div className="col-md-6">
-            <div className="text-center text-danger">&gt; {threshold}</div>
-            <TreeNode ref={rightChildRef} nodeData={props.nodeData?.children?.right} />
+
+          <div className="row mt-3">
+            <div className="col-md-6">
+              <div className="text-center text-success">&le; {threshold}</div>
+              <TreeNode ref={leftChildRef} nodeData={props.nodeData?.children?.left} />
+            </div>
+            <div className="col-md-6">
+              <div className="text-center text-danger">&gt; {threshold}</div>
+              <TreeNode ref={rightChildRef} nodeData={props.nodeData?.children?.right} />
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

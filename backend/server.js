@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const athletesRouter = require('./routes/athletes');
 
 // Load environment variables
 dotenv.config();
@@ -17,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/trees', require('./routes/trees'));
-app.use('/api/athletes', require('./routes/athletes'));
+app.use('/api/athletes', athletesRouter);
 app.use('/api/measurements', require('./routes/measurements'));
 
 

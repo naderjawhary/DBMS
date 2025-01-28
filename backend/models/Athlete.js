@@ -1,33 +1,18 @@
 const mongoose = require('mongoose');
 
-// Schema für Athleten
+const MeasurementSchema = new mongoose.Schema({
+  id: { type: Number, required: true },
+  name: { type: String, required: true },
+  value: { type: Number, required: true }, // Wert als Zahl erzwingen
+  unit: { type: String, required: false },
+});
+
 const AthleteSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    age: {
-        type: Number,
-        required: true,
-    },
-    gender: {
-        type: String,
-        enum: ['Male', 'Female', 'Other'],
-        required: true,
-    },
-    measurements: [
-        {
-            id: Number,
-            name: String,
-            value: Number,
-            unit: String,
-        },
-    ],
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
+  name: { type: String, required: true },
+  age: { type: Number, required: true },
+  gender: { type: Number, enum: [0, 1], required: true }, // 0 = Male, 1 = Female
+  measurements: [MeasurementSchema],
 });
 
 module.exports = mongoose.model('Athlete', AthleteSchema);
+

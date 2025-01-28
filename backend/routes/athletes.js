@@ -14,13 +14,56 @@ router.get('/', async (req, res) => {
 
 // Route: Athlet erstellen
 router.post('/', async (req, res) => {
-    try {
-        const athlete = new Athlete(req.body);
-        const savedAthlete = await athlete.save();
-        res.status(201).json(savedAthlete);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
+  try {
+    const athlete = new Athlete(req.body);
+    const savedAthlete = await athlete.save();
+    res.status(201).json(savedAthlete);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+
+
+
+router.get('/split', async (req, res) => {
+  const { measurementId, threshold } = req.query;
+
+  if (!measurementId || !threshold) {
+    return res.status(400).json({ error: 'Missing measurementId or threshold' });
+  }
+
+  try {
+    const parsedMeasurementId = parseInt(measurementId);
+    const parsedThreshold = parseFloat(threshold);
+
+    if (isNaN(parsedMeasurementId) || isNaN(parsedThreshold)) {
+      return res.status(400).json({ error: 'Invalid measurementId or threshold' });
     }
+
+    const leftCount = await Athlete.countDocuments({
+      measurements: {
+        $elemMatch: {
+          id: parsedMeasurementId,
+          value: { $lte: parsedThreshold }
+        }
+      }
+    });
+
+    const rightCount = await Athlete.countDocuments({
+      measurements: {
+        $elemMatch: {
+          id: parsedMeasurementId,
+          value: { $gt: parsedThreshold }
+        }
+      }
+    });
+
+    res.json({ leftCount, rightCount });
+  } catch (error) {
+    console.error('Error processing split:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Route: Athlet nach ID abrufen

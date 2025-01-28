@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import TreeNode from './TreeNode';
 import MeasurementsList from './MeasurementsList';
+import AddAthleteForm from './AddAthleteForm';
 import api from './api';
 
 function App() {
@@ -47,55 +49,71 @@ function App() {
   };
 
   return (
-    <div className="container-fluid py-4">
-      <h1 className="text-center mb-4">Athlete Diagnosis Tree Builder</h1>
+    <Router>
+      <div className="container-fluid py-4">
+        <h1 className="text-center mb-4">Athlete Diagnosis Tree Builder</h1>
 
-      <div className="row mb-4">
-        <div className="col-md-6">
-          <button className="btn btn-primary me-2" onClick={handleSaveTree}>
-            Save Tree
-          </button>
-          <button className="btn btn-secondary" onClick={handleLoadTrees}>
-            Load Trees
-          </button>
-        </div>
-        <div className="col-md-6">
-          {savedTrees.length > 0 && (
-            <select
-              className="form-select"
-              onChange={(e) => handleTreeSelect(e.target.value)}
-            >
-              <option value="">Select a tree to load...</option>
-              {savedTrees.map((tree) => (
-                <option key={tree._id} value={tree._id}>
-                  Tree {tree._id} - Created: {new Date(tree.createdAt).toLocaleDateString()}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      </div>
+        <nav className="mb-4">
+          <Link to="/" className="btn btn-secondary me-2">Home</Link>
+          <Link to="/add-athlete" className="btn btn-primary">Add Athlete</Link>
+        </nav>
 
-      <div className="row">
-        {/* Sidebar */}
-        {sidebarOpen && (
-          <div className="col-lg-3">
-            <MeasurementsList />
-          </div>
-        )}
-        <div className={`col ${sidebarOpen ? 'col-lg-9' : 'col-lg-12'}`}>
-          <button
-            className={`btn btn-${sidebarOpen ? 'danger' : 'primary'} mb-3`}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            {sidebarOpen ? 'Hide Measurements' : 'Show Measurements'}
-          </button>
-          <div className="tree-container p-3 border rounded bg-light">
-            <TreeNode ref={treeRef} nodeData={currentTreeData} />
-          </div>
-        </div>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <div>
+                <div className="row mb-4">
+                  <div className="col-md-6">
+                    <button className="btn btn-primary me-2" onClick={handleSaveTree}>
+                      Save Tree
+                    </button>
+                    <button className="btn btn-secondary" onClick={handleLoadTrees}>
+                      Load Trees
+                    </button>
+                  </div>
+                  <div className="col-md-6">
+                    {savedTrees.length > 0 && (
+                      <select
+                        className="form-select"
+                        onChange={(e) => handleTreeSelect(e.target.value)}
+                      >
+                        <option value="">Select a tree to load...</option>
+                        {savedTrees.map((tree) => (
+                          <option key={tree._id} value={tree._id}>
+                            Tree {tree._id} - Created: {new Date(tree.createdAt).toLocaleDateString()}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                <div className="row">
+                  {sidebarOpen && (
+                    <div className="col-lg-3">
+                      <MeasurementsList />
+                    </div>
+                  )}
+                  <div className={`col ${sidebarOpen ? 'col-lg-9' : 'col-lg-12'}`}>
+                    <button
+                      className={`btn btn-${sidebarOpen ? 'danger' : 'primary'} mb-3`}
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                    >
+                      {sidebarOpen ? 'Hide Measurements' : 'Show Measurements'}
+                    </button>
+                    <div className="tree-container p-3 border rounded bg-light">
+                      <TreeNode ref={treeRef} nodeData={currentTreeData} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          />
+          <Route path="/add-athlete" element={<AddAthleteForm />} />
+        </Routes>
       </div>
-    </div>
+    </Router>
   );
 }
 
