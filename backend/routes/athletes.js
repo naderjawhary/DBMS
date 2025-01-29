@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
+import Athlete from '../models/Athlete.js'; // .js-Endung erforderlich!
 const router = express.Router();
-const Athlete = require('../models/Athlete');
 
 // Route: Alle Athleten abrufen
 router.get('/', async (req, res) => {

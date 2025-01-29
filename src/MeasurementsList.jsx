@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 
 function MeasurementsList() {
   const [measurements, setMeasurements] = useState([]);
@@ -48,7 +48,7 @@ function MeasurementsList() {
             ))}
           </ul>
         ) : (
-          <p>Loading measurements...</p>
+            <p>Loading measurements...</p>
         )}
       </div>
     </div>

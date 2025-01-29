@@ -4,38 +4,38 @@ function AddAthleteForm() {
   const [athlete, setAthlete] = useState({
     name: '',
     age: '',
-    gender: null,
+    gender: '',
     measurements: [
-      { id: 1, name: 'Height', value: '', unit: 'cm' },
-      { id: 2, name: 'Weight', value: '', unit: 'kg' },
-      { id: 3, name: 'BMI', value: '' },
+      { id: 1, name: 'Weight', value: '', unit: 'kg' },
+      { id: 2, name: 'Height', value: '', unit: 'cm' },
+      { id: 3, name: 'BMI', value: '', unit: 'kg/m²' },
       { id: 4, name: 'Speed', value: '', unit: 'm/s' },
       { id: 5, name: 'Jump distance', value: '', unit: 'cm' },
-      { id: 6, name: 'Jump height', value: '', unit: 'cm' },
     ],
   });
 
 const handleInputChange = (field, value) => {
   setAthlete((prev) => ({
     ...prev,
-    [field]: field === 'gender' ? Number(value) : value, // Gender als Zahl speichern
+    [field]: field === 'gender' && value !== "" ? Number(value) : value
   }));
 };
 
 
-  const handleMeasurementChange = (id, key, value) => {
-    setAthlete((prev) => ({
-      ...prev,
-      measurements: prev.measurements.map((measurement) =>
-        measurement.id === id ? { ...measurement, [key]: value } : measurement
-      ),
-    }));
-  };
+const handleMeasurementChange = (id, key, value) => {
+  setAthlete((prev) => ({
+    ...prev,
+    measurements: prev.measurements.map((measurement) =>
+      measurement.id === id ? { ...measurement, [key]: value } : measurement
+    ),
+  }));
+};
+
 
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  if (athlete.gender === null || athlete.gender === "") {
+  if (athlete.gender === null || athlete.gender === "" || isNaN(athlete.gender)) {
     alert("Please select a valid gender.");
     return;
   }
@@ -66,12 +66,11 @@ const handleSubmit = async (e) => {
         age: '',
         gender: null,
         measurements: [
-          { id: 1, name: 'Height', value: '', unit: 'cm' },
-          { id: 2, name: 'Weight', value: '', unit: 'kg' },
+          { id: 1, name: 'Weight', value: '', unit: 'kg' },
+          { id: 2, name: 'Height', value: '', unit: 'cm' },
           { id: 3, name: 'BMI', value: '' },
           { id: 4, name: 'Speed', value: '', unit: 'm/s' },
           { id: 5, name: 'Jump distance', value: '', unit: 'cm' },
-          { id: 6, name: 'Jump height', value: '', unit: 'cm' },
         ],
       });
     } else {
