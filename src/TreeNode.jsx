@@ -8,12 +8,12 @@ const TreeNode = forwardRef((props, ref) => {
   const rightChildRef = useRef(null);
   const [splitCounts, setSplitCounts] = useState({ leftCount: 0, rightCount: 0 });
 
-  useEffect(() => {
-    if (props.nodeData) {
-      setMeasurement(props.nodeData.measurement);
-      setThreshold(props.nodeData.threshold?.toString() || '');
-    }
-  }, [props.nodeData]);
+ useEffect(() => {
+   if (nodeData) {
+     setMeasurement(nodeData.measurement);
+     setThreshold(nodeData.threshold?.toString() || '');
+   }
+ }, [nodeData]);
 
   useEffect(() => {
   const updateSplitCounts = async () => {
@@ -47,49 +47,60 @@ const TreeNode = forwardRef((props, ref) => {
     getNodeData,
   }));
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
+ const handleDragOver = (e) => {
+   e.preventDefault();
+ };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    try {
-      const droppedMeasurement = JSON.parse(e.dataTransfer.getData('measurement'));
-      setMeasurement(droppedMeasurement);
-    } catch (error) {
-      console.error('Error dropping measurement:', error);
-    }
-  };
+ const handleDrop = (e) => {
+   e.preventDefault();
+   try {
+     const droppedMeasurement = JSON.parse(e.dataTransfer.getData('measurement'));
+     setMeasurement(droppedMeasurement);
+     const data = getNodeData();
+     console.log('Drop data:', data);
+     onNodeChange?.(data);
+   } catch (error) {
+     console.error('Error dropping measurement:', error);
+   }
+ };
 
-  const handleThresholdChange = (e) => {
-    setThreshold(e.target.value);
-  };
+ const handleThresholdChange = (e) => {
+   setThreshold(e.target.value);
+   const data = getNodeData();
+   console.log('Threshold changed, new data:', data);
+   onNodeChange?.(data);
+ };
 
-  return (
-    <div className="card shadow-sm mb-3">
-      <div
-        className={`card-body ${!measurement ? 'bg-light text-muted' : ''}`}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        {!measurement ? (
-          <div className="text-center">Drop measurement here</div>
-        ) : (
-          <>
-            <div className="d-flex justify-content-between align-items-center">
-              <strong>{measurement.name}</strong>
-              <span className="text-muted">({measurement.unit})</span>
-            </div>
-            <input
-              type="number"
-              className="form-control mt-2"
-              placeholder="Enter threshold..."
-              value={threshold}
-              onChange={handleThresholdChange}
-            />
-          </>
-        )}
-      </div>
+ return (
+   <div className="card shadow-sm mb-3">
+     <div
+       className={`card-body ${!measurement ? 'bg-light text-muted' : ''}`}
+       onDragOver={handleDragOver}
+       onDrop={handleDrop}
+     >
+       {!measurement ? (
+         <div className="text-center">Drop measurement here</div>
+       ) : (
+         <>
+           <div className="d-flex justify-content-between align-items-center">
+             <strong>{measurement.name}</strong>
+             <span className="text-muted">({measurement.unit})</span>
+           </div>
+           <input
+             type="number"
+             className="form-control mt-2"
+             placeholder="Enter threshold..."
+             value={threshold}
+             onChange={handleThresholdChange}
+             onBlur={() => {
+               const data = getNodeData();
+               console.log('Input blur, new data:', data);
+               onNodeChange?.(data);
+             }}
+           />
+         </>
+       )}
+     </div>
 
       {measurement && threshold && (
         <>
