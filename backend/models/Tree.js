@@ -8,9 +8,11 @@ const NodeSchema = new mongoose.Schema({
         unit: String
     },
     threshold: Number,
+    isLeaf: { type: Boolean, default: false }, // Standardwert hinzugefügt
+    intervention: { type: String, enum: ['Yes', 'No', ''], default: '' }, // Enum für sichere Werte
     children: {
-        left: { type: mongoose.Schema.Types.Mixed }, // Will contain another node
-        right: { type: mongoose.Schema.Types.Mixed } // Will contain another node
+        left: { type: mongoose.Schema.Types.Mixed, default: null }, // Falls kein Kind vorhanden ist, bleibt es null
+        right: { type: mongoose.Schema.Types.Mixed, default: null }
     }
 });
 

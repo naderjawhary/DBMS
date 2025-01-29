@@ -24,47 +24,48 @@ router.post('/', async (req, res) => {
 });
 
 
+router.post('/split', async (req, res) => {
+    const { measurementId, threshold, subset } = req.body;
 
+    console.log("Received Data:", { measurementId, threshold, subset });
 
-router.get('/split', async (req, res) => {
-  const { measurementId, threshold } = req.query;
-
-  if (!measurementId || !threshold) {
-    return res.status(400).json({ error: 'Missing measurementId or threshold' });
-  }
-
-  try {
-    const parsedMeasurementId = parseInt(measurementId);
-    const parsedThreshold = parseFloat(threshold);
-
-    if (isNaN(parsedMeasurementId) || isNaN(parsedThreshold)) {
-      return res.status(400).json({ error: 'Invalid measurementId or threshold' });
+    if (!measurementId || !threshold || !subset || !Array.isArray(subset) || subset.length === 0) {
+        return res.status(400).json({ error: 'Missing or invalid parameters' });
     }
 
-    const leftCount = await Athlete.countDocuments({
-      measurements: {
-        $elemMatch: {
-          id: parsedMeasurementId,
-          value: { $lte: parsedThreshold }
-        }
-      }
-    });
+    try {
+        const parsedMeasurementId = parseInt(measurementId);
+        const parsedThreshold = parseFloat(threshold);
 
-    const rightCount = await Athlete.countDocuments({
-      measurements: {
-        $elemMatch: {
-          id: parsedMeasurementId,
-          value: { $gt: parsedThreshold }
+        if (isNaN(parsedMeasurementId) || isNaN(parsedThreshold)) {
+            return res.status(400).json({ error: 'Invalid measurementId or threshold' });
         }
-      }
-    });
 
-    res.json({ leftCount, rightCount });
-  } catch (error) {
-    console.error('Error processing split:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+        console.log("Parsed Values:", { parsedMeasurementId, parsedThreshold });
+
+        // Debug: Finde die Athleten, die gefiltert werden
+        const filteredAthletes = await Athlete.find({ _id: { $in: subset } });
+        console.log("Filtered Athletes:", filteredAthletes);
+
+        // Überprüfe, ob die Messwerte korrekt im Schema sind
+        const leftCount = filteredAthletes.filter(athlete =>
+            athlete.measurements.some(m => m.id === parsedMeasurementId && m.value <= parsedThreshold)
+        ).length;
+
+        const rightCount = filteredAthletes.filter(athlete =>
+            athlete.measurements.some(m => m.id === parsedMeasurementId && m.value > parsedThreshold)
+        ).length;
+
+        console.log("Split Results:", { leftCount, rightCount });
+
+        res.json({ leftCount, rightCount });
+    } catch (error) {
+        console.error('Error processing split:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
+
+
 
 // Route: Athlet nach ID abrufen
 router.get('/:id', async (req, res) => {

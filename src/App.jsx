@@ -1,4 +1,4 @@
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {BrowserRouter as Router, Link, Route, Routes} from 'react-router-dom';
 import TreeNode from './TreeNode';
 import MeasurementsList from './MeasurementsList';
@@ -7,12 +7,26 @@ import api from './api';
 
 function App() {
     const treeRef = useRef(null);
+    const [athletes, setAthletes] = useState([]);
     const [savedTrees, setSavedTrees] = useState([]);
     const [currentTreeData, setCurrentTreeData] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [history, setHistory] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(-1);
     const [showTreeSelect, setShowTreeSelect] = useState(false);
+
+    useEffect(() => {
+        const fetchAthletes = async () => {
+            try {
+                const response = await api.get('/athletes');  // API-Aufruf für Athleten
+                console.log("Fetched Athletes:", response.data);
+                setAthletes(response.data);
+            } catch (error) {
+                console.error("Error fetching athletes:", error);
+            }
+        };
+        fetchAthletes();
+    }, []);
 
     const addToHistory = useCallback((treeData) => {
         const newHistory = history.slice(0, currentIndex + 1);
@@ -166,8 +180,12 @@ function App() {
                                             {sidebarOpen ? 'Hide Measurements' : 'Show Measurements'}
                                         </button>
                                         <div className="tree-container p-3 border rounded bg-light">
-                                            <TreeNode ref={treeRef} nodeData={currentTreeData}
-                                                      onNodeChange={addToHistory}/>
+                                            <TreeNode
+                                                ref={treeRef}
+                                                nodeData={currentTreeData}
+                                                parentSubset={athletes}
+                                                onNodeChange={addToHistory}
+                                            />
                                         </div>
                                     </div>
                                 </div>
