@@ -1,5 +1,6 @@
 import express from 'express';
 import Athlete from '../models/Athlete.js'; // .js-Endung erforderlich!
+
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -26,4 +27,4 @@ router.get('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,7 +1,7 @@
-const Tree = require('../models/Tree');
+import Tree from '../models/Tree.js'; // `.js` ist notwendig in ES Modules!
 
 // Create new tree
-const createTree = async (req, res) => {
+export const createTree = async (req, res) => {
     try {
         const newTree = await Tree.create({
             rootNode: req.body.rootNode
@@ -13,7 +13,7 @@ const createTree = async (req, res) => {
 };
 
 // Get all trees
-const getAllTrees = async (req, res) => {
+export const getAllTrees = async (req, res) => {
     try {
         const trees = await Tree.find();
         res.json(trees);
@@ -23,7 +23,7 @@ const getAllTrees = async (req, res) => {
 };
 
 // Get a single tree by ID
-const getTreeById = async (req, res) => {
+export const getTreeById = async (req, res) => {
     try {
         const tree = await Tree.findById(req.params.id);
         if (!tree) {
@@ -36,7 +36,7 @@ const getTreeById = async (req, res) => {
 };
 
 // Update a tree
-const updateTree = async (req, res) => {
+export const updateTree = async (req, res) => {
     try {
         const updatedTree = await Tree.findByIdAndUpdate(
             req.params.id,
@@ -56,7 +56,7 @@ const updateTree = async (req, res) => {
 };
 
 // Delete a tree
-const deleteTree = async (req, res) => {
+export const deleteTree = async (req, res) => {
     try {
         const tree = await Tree.findByIdAndDelete(req.params.id);
         if (!tree) {
@@ -66,12 +66,4 @@ const deleteTree = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-};
-
-module.exports = {
-    createTree,
-    getAllTrees,
-    getTreeById,
-    updateTree,
-    deleteTree
 };

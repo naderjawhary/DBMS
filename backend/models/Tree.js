@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // Schema for individual nodes in the tree
 const NodeSchema = new mongoose.Schema({
@@ -29,4 +29,4 @@ const TreeSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Tree', TreeSchema);
+export default mongoose.model('Tree', TreeSchema);

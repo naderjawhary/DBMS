@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const MeasurementSchema = new mongoose.Schema({
   id: { type: Number, required: true },
@@ -14,5 +14,4 @@ const AthleteSchema = new mongoose.Schema({
   measurements: [MeasurementSchema],
 });
 
-module.exports = mongoose.model('Athlete', AthleteSchema);
-
+export default mongoose.model('Athlete', AthleteSchema);

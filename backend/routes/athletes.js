@@ -1,5 +1,6 @@
 import express from 'express';
-import Athlete from '../models/Athlete.js'; // .js-Endung erforderlich!
+import Athlete from '../models/Athlete.js';
+
 const router = express.Router();
 
 // Route: Alle Athleten abrufen
@@ -14,16 +15,16 @@ router.get('/', async (req, res) => {
 
 // Route: Athlet erstellen
 router.post('/', async (req, res) => {
-  try {
-    const athlete = new Athlete(req.body);
-    const savedAthlete = await athlete.save();
-    res.status(201).json(savedAthlete);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+    try {
+        const athlete = new Athlete(req.body);
+        const savedAthlete = await athlete.save();
+        res.status(201).json(savedAthlete);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
 });
 
-
+// Route: Split-Logik für Messwerte
 router.post('/split', async (req, res) => {
     const { measurementId, threshold, subset } = req.body;
 
@@ -43,7 +44,7 @@ router.post('/split', async (req, res) => {
 
         console.log("Parsed Values:", { parsedMeasurementId, parsedThreshold });
 
-        // Debug: Finde die Athleten, die gefiltert werden
+        // Finde die Athleten, die gefiltert werden
         const filteredAthletes = await Athlete.find({ _id: { $in: subset } });
         console.log("Filtered Athletes:", filteredAthletes);
 
@@ -64,8 +65,6 @@ router.post('/split', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
-
 
 // Route: Athlet nach ID abrufen
 router.get('/:id', async (req, res) => {
@@ -100,4 +99,4 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;
