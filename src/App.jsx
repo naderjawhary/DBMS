@@ -14,123 +14,128 @@ function App() {
     const [history, setHistory] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(-1);
     const [showTreeSelect, setShowTreeSelect] = useState(false);
- const [showTreeSelect, setShowTreeSelect] = useState(false);
- const [suggestions, setSuggestions] = useState([]);
- const [lastDroppedMeasurement, setLastDroppedMeasurement] = useState(null);
+    const [suggestions, setSuggestions] = useState([]);
+    const [lastDroppedMeasurement, setLastDroppedMeasurement] = useState(null);
 
- const analyzeTrees = async () => {
-   try {
-       const response = await api.get('/trees');
-       const allTrees = response.data;
+    useEffect(() => {
+        if (currentIndex >= 0 && currentIndex < history.length) {
+            setCurrentTreeData(history[currentIndex]);
+        }
+    }, [currentIndex, history]);
 
-       const patterns = {
-           commonMeasurements: {},
-           commonThresholds: {},
-           measurementPairs: {}
-       };
+    const analyzeTrees = async () => {
+        try {
+            const response = await api.get('/trees');
+            const allTrees = response.data;
 
-       allTrees.forEach(tree => {
-           const measurements = [];
+            const patterns = {
+                commonMeasurements: {},
+                commonThresholds: {},
+                measurementPairs: {}
+            };
 
-           const analyzeNode = (node) => {
-               if (!node || !node.measurement) return;
+            allTrees.forEach(tree => {
+                const measurements = [];
 
-               const measurementName = node.measurement.name;
-               measurements.push(measurementName);
+                const analyzeNode = (node) => {
+                    if (!node || !node.measurement) return;
 
-               patterns.commonMeasurements[measurementName] =
-                   (patterns.commonMeasurements[measurementName] || 0) + 1;
+                    const measurementName = node.measurement.name;
+                    measurements.push(measurementName);
 
-               if (!patterns.commonThresholds[measurementName]) {
-                   patterns.commonThresholds[measurementName] = [];
-               }
-               if (node.threshold) {
-                   patterns.commonThresholds[measurementName].push(node.threshold);
-               }
+                    patterns.commonMeasurements[measurementName] =
+                        (patterns.commonMeasurements[measurementName] || 0) + 1;
 
-               if (node.children) {
-                   analyzeNode(node.children.left);
-                   analyzeNode(node.children.right);
-               }
-           };
+                    if (!patterns.commonThresholds[measurementName]) {
+                        patterns.commonThresholds[measurementName] = [];
+                    }
+                    if (node.threshold) {
+                        patterns.commonThresholds[measurementName].push(node.threshold);
+                    }
 
-           analyzeNode(tree.rootNode);
+                    if (node.children) {
+                        analyzeNode(node.children.left);
+                        analyzeNode(node.children.right);
+                    }
+                };
 
-           measurements.forEach((measurement, i) => {
-               if (!patterns.measurementPairs[measurement]) {
-                   patterns.measurementPairs[measurement] = {};
-               }
+                analyzeNode(tree.rootNode);
 
-               if (measurements[i + 1]) {
-                   const nextMeasurement = measurements[i + 1];
-                   patterns.measurementPairs[measurement][nextMeasurement] =
-                       (patterns.measurementPairs[measurement][nextMeasurement] || 0) + 1;
-               }
-           });
-       });
+                measurements.forEach((measurement, i) => {
+                    if (!patterns.measurementPairs[measurement]) {
+                        patterns.measurementPairs[measurement] = {};
+                    }
 
-       return patterns;
-   } catch (error) {
-       console.error('Error analyzing trees:', error);
-       return null;
-   }
- };
+                    if (measurements[i + 1]) {
+                        const nextMeasurement = measurements[i + 1];
+                        patterns.measurementPairs[measurement][nextMeasurement] =
+                            (patterns.measurementPairs[measurement][nextMeasurement] || 0) + 1;
+                    }
+                });
+            });
 
- const getSuggestions = async (currentMeasurement = null) => {
-   const patterns = await analyzeTrees();
-   if (!patterns) return [];
+            return patterns;
+        } catch (error) {
+            console.error('Error analyzing trees:', error);
+            return null;
+        }
+    };
 
-   let suggestions = [];
+    const getSuggestions = async (currentMeasurement = null) => {
+        const patterns = await analyzeTrees();
+        if (!patterns) return [];
 
-   if (currentMeasurement) {
-       const pairs = patterns.measurementPairs[currentMeasurement];
-       if (pairs) {
-           suggestions = Object.entries(pairs)
-               .sort(([,a], [,b]) => b - a)
-               .slice(0, 3)
-               .map(([measurement, frequency]) => ({
-                   measurement,
-                   frequency,
-                   suggestedThreshold: patterns.commonThresholds[measurement]?.length > 0
-                       ? (patterns.commonThresholds[measurement].reduce((a, b) => a + b, 0) /
-                          patterns.commonThresholds[measurement].length).toFixed(1)
-                       : null,
-                   type: 'next-in-sequence'
-               }));
-       }
-   }
+        let suggestions = [];
 
-   if (suggestions.length < 3) {
-       const generalSuggestions = Object.entries(patterns.commonMeasurements)
-           .sort(([,a], [,b]) => b - a)
-           .filter(([measurement]) =>
-               !suggestions.some(s => s.measurement === measurement))
-           .slice(0, 3 - suggestions.length)
-           .map(([measurement, frequency]) => ({
-               measurement,
-               frequency,
-               suggestedThreshold: patterns.commonThresholds[measurement]?.length > 0
-                   ? (patterns.commonThresholds[measurement].reduce((a, b) => a + b, 0) /
-                      patterns.commonThresholds[measurement].length).toFixed(1)
-                   : null,
-               type: 'popular'
-           }));
+        if (currentMeasurement) {
+            const pairs = patterns.measurementPairs[currentMeasurement];
+            if (pairs) {
+                suggestions = Object.entries(pairs)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 3)
+                    .map(([measurement, frequency]) => ({
+                        measurement,
+                        frequency,
+                        suggestedThreshold: patterns.commonThresholds[measurement]?.length > 0
+                            ? (patterns.commonThresholds[measurement].reduce((a, b) => a + b, 0) /
+                                patterns.commonThresholds[measurement].length).toFixed(1)
+                            : null,
+                        type: 'next-in-sequence'
+                    }));
+            }
+        }
 
-       suggestions = [...suggestions, ...generalSuggestions];
-   }
+        if (suggestions.length < 3) {
+            const generalSuggestions = Object.entries(patterns.commonMeasurements)
+                .sort(([, a], [, b]) => b - a)
+                .filter(([measurement]) =>
+                    !suggestions.some(s => s.measurement === measurement))
+                .slice(0, 3 - suggestions.length)
+                .map(([measurement, frequency]) => ({
+                    measurement,
+                    frequency,
+                    suggestedThreshold: patterns.commonThresholds[measurement]?.length > 0
+                        ? (patterns.commonThresholds[measurement].reduce((a, b) => a + b, 0) /
+                            patterns.commonThresholds[measurement].length).toFixed(1)
+                        : null,
+                    type: 'popular'
+                }));
 
-   return suggestions;
- };
+            suggestions = [...suggestions, ...generalSuggestions];
+        }
 
- const handleMeasurementDrop = (measurement) => {
-   setLastDroppedMeasurement(measurement.name);
-   updateSuggestions(measurement.name);
- };
+        return suggestions;
+    };
 
- const updateSuggestions = async (measurementName) => {
-   const newSuggestions = await getSuggestions(measurementName);
-   setSuggestions(newSuggestions);
- };
+    const handleMeasurementDrop = (measurement) => {
+        setLastDroppedMeasurement(measurement.name);
+        updateSuggestions(measurement.name);
+    };
+
+    const updateSuggestions = async (measurementName) => {
+        const newSuggestions = await getSuggestions(measurementName);
+        setSuggestions(newSuggestions);
+    };
 
     useEffect(() => {
         const fetchAthletes = async () => {
@@ -144,84 +149,89 @@ function App() {
         fetchAthletes();
     }, []);
 
-const addToHistory = useCallback((treeData) => {
-   const newHistory = history.slice(0, currentIndex + 1);
-   newHistory.push(treeData);
-   setHistory(newHistory);
-   setCurrentIndex(newHistory.length - 1);
- }, [history, currentIndex]);
 
- const undo = useCallback(() => {
-   if (currentIndex > 0) {
-     setCurrentIndex(currentIndex - 1);
-     setCurrentTreeData(history[currentIndex - 1]);
-   }
- }, [currentIndex, history]);
+    // Add to history when tree changes
+    const addToHistory = useCallback((treeData) => {
+        const newHistory = history.slice(0, currentIndex + 1);
+        newHistory.push(treeData);
+        setHistory(newHistory);
+        setCurrentIndex(newHistory.length - 1);
+    }, [history, currentIndex]);
 
- const redo = useCallback(() => {
-   if (currentIndex < history.length - 1) {
-     setCurrentIndex(currentIndex + 1);
-     setCurrentTreeData(history[currentIndex + 1]);
-   }
- }, [currentIndex, history]);
+    // Undo function
+    const undo = useCallback(() => {
+        if (currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+            setCurrentTreeData(history[currentIndex - 1]);
+        }
+    }, [currentIndex, history]);
 
- const handleDeleteTree = async (treeId) => {
-   try {
-     console.log('Deleting tree:', treeId);
-     await api.delete(`/trees/${treeId}`);
-     console.log('Tree deleted from database');
-     await handleLoadTrees();
-     if (currentTreeData) {
-       setCurrentTreeData(null);
-       setHistory([]);
-       setCurrentIndex(-1);
-     }
-   } catch (error) {
-     console.error('Error deleting tree:', error);
-     alert('Error deleting tree');
-   }
- };
+    // Redo function
+    const redo = useCallback(() => {
+        if (currentIndex < history.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+            setCurrentTreeData(history[currentIndex + 1]);
+        }
+    }, [currentIndex, history]);
 
- const handleSaveTree = async () => {
-   try {
-     const treeData = treeRef.current.getNodeData();
-     addToHistory(treeData);
-     const response = await api.post('/trees', { rootNode: treeData });
-     console.log('Tree saved successfully:', response.data);
-     alert('Tree saved successfully!');
-   } catch (error) {
-     console.error('Error saving tree:', error);
-     alert('Error saving tree');
-   }
- };
 
- const handleLoadTrees = async () => {
-   try {
-     const response = await api.get('/trees');
-     setSavedTrees(response.data);
-     setShowTreeSelect(true);
-     console.log('Trees loaded:', response.data);
-   } catch (error) {
-     console.error('Error loading trees:', error);
-     alert('Error loading trees');
-   }
- };
+    const handleDeleteTree = async (treeId) => {
+        try {
+            console.log('Deleting tree:', treeId);
+            await api.delete(`/trees/${treeId}`);
+            console.log('Tree deleted from database');
+            await handleLoadTrees();
+            if (currentTreeData) {
+                setCurrentTreeData(null);
+                setHistory([]);
+                setCurrentIndex(-1);
+            }
+        } catch (error) {
+            console.error('Error deleting tree:', error);
+            alert('Error deleting tree');
+        }
+    };
 
- const handleTreeSelect = async (treeId) => {
-   try {
-     if (!treeId) {
-       setCurrentTreeData(null);
-       return;
-     }
-     const response = await api.get(`/trees/${treeId}`);
-     const treeData = response.data.rootNode;
-     setCurrentTreeData(treeData);
-     addToHistory(treeData);
-   } catch (error) {
-     console.error('Error loading tree:', error);
-     alert('Error loading selected tree');
-   }
- };
+    const handleSaveTree = async () => {
+        try {
+            const treeData = treeRef.current.getNodeData();
+            addToHistory(treeData);
+            const response = await api.post('/trees', {rootNode: treeData});
+            console.log('Tree saved successfully:', response.data);
+            alert('Tree saved successfully!');
+        } catch (error) {
+            console.error('Error saving tree:', error);
+            alert('Error saving tree');
+        }
+    };
+
+    const handleLoadTrees = async () => {
+        try {
+            const response = await api.get('/trees');
+            setSavedTrees(response.data);
+            setShowTreeSelect(true);
+            console.log('Trees loaded:', response.data);
+        } catch (error) {
+            console.error('Error loading trees:', error);
+            alert('Error loading trees');
+        }
+    };
+
+    const handleTreeSelect = async (treeId) => {
+        try {
+            if (!treeId) {
+                setCurrentTreeData(null);
+                return;
+            }
+            const response = await api.get(`/trees/${treeId}`);
+            const treeData = response.data.rootNode;
+            setCurrentTreeData(treeData);
+            addToHistory(treeData);
+        } catch (error) {
+            console.error('Error loading tree:', error);
+            alert('Error loading selected tree');
+        }
+    };
 
     return (
         <Router>
@@ -255,11 +265,11 @@ const addToHistory = useCallback((treeData) => {
                                             Redo
                                         </button>
                                         <button
-           className="btn btn-secondary"
-           onClick={async () => updateSuggestions(lastDroppedMeasurement)}
-         >
-           Get Suggestions
-         </button>
+                                            className="btn btn-secondary"
+                                            onClick={async () => updateSuggestions(lastDroppedMeasurement)}
+                                        >
+                                            Get Suggestions
+                                        </button>
                                     </div>
                                     <div className="col-md-6 d-flex">
                                         {showTreeSelect && savedTrees.length > 0 && (
@@ -290,29 +300,29 @@ const addToHistory = useCallback((treeData) => {
                                     </div>
                                 </div>
                                 {suggestions.length > 0 && (
-       <div className="row mb-4">
-         <div className="col">
-           <div className="p-3 bg-light border rounded">
-             <h5>Suggestions based on your current tree:</h5>
-             <ul className="list-unstyled">
-               {suggestions.map((s, i) => (
-                 <li key={i} className="mb-2">
-                   <strong>{s.measurement}</strong>
-                   {s.suggestedThreshold &&
-                     ` (Suggested threshold: ${s.suggestedThreshold})`}
-                   <small className="text-muted d-block">
-                     {s.type === 'next-in-sequence'
-                       ? `Commonly used after ${lastDroppedMeasurement}`
-                       : 'Popular measurement'}
-                     - Used {s.frequency} times
-                   </small>
-                 </li>
-               ))}
-             </ul>
-           </div>
-         </div>
-       </div>
-     )}
+                                    <div className="row mb-4">
+                                        <div className="col">
+                                            <div className="p-3 bg-light border rounded">
+                                                <h5>Suggestions based on your current tree:</h5>
+                                                <ul className="list-unstyled">
+                                                    {suggestions.map((s, i) => (
+                                                        <li key={i} className="mb-2">
+                                                            <strong>{s.measurement}</strong>
+                                                            {s.suggestedThreshold &&
+                                                                ` (Suggested threshold: ${s.suggestedThreshold})`}
+                                                            <small className="text-muted d-block">
+                                                                {s.type === 'next-in-sequence'
+                                                                    ? `Commonly used after ${lastDroppedMeasurement}`
+                                                                    : 'Popular measurement'}
+                                                                - Used {s.frequency} times
+                                                            </small>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="row">
                                     {sidebarOpen && (
