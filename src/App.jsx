@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {BrowserRouter as Router, Link, Route, Routes} from 'react-router-dom';
 import TreeNode from './TreeNode';
 import MeasurementsList from './MeasurementsList';
@@ -18,31 +18,33 @@ function App() {
     const [lastDroppedMeasurement, setLastDroppedMeasurement] = useState(null);
 
     useEffect(() => {
-        if (currentIndex >= 0 && currentIndex < history.length) {
-            setCurrentTreeData(history[currentIndex]);
-        }
-    }, [currentIndex, history]);
+        const fetchAthletes = async () => {
+            try {
+                const response = await api.get('/athletes');
+                setAthletes(response.data);
+            } catch (error) {
+                console.error('Error fetching athletes:', error);
+            }
+        };
+        fetchAthletes();
+    }, []);
 
     const analyzeTrees = async () => {
         try {
             const response = await api.get('/trees');
             const allTrees = response.data;
-
             const patterns = {
                 commonMeasurements: {},
                 commonThresholds: {},
-                measurementPairs: {}
+                measurementPairs: {},
             };
 
-            allTrees.forEach(tree => {
+            allTrees.forEach((tree) => {
                 const measurements = [];
-
                 const analyzeNode = (node) => {
                     if (!node || !node.measurement) return;
-
                     const measurementName = node.measurement.name;
                     measurements.push(measurementName);
-
                     patterns.commonMeasurements[measurementName] =
                         (patterns.commonMeasurements[measurementName] || 0) + 1;
 
@@ -58,14 +60,12 @@ function App() {
                         analyzeNode(node.children.right);
                     }
                 };
-
                 analyzeNode(tree.rootNode);
 
                 measurements.forEach((measurement, i) => {
                     if (!patterns.measurementPairs[measurement]) {
                         patterns.measurementPairs[measurement] = {};
                     }
-
                     if (measurements[i + 1]) {
                         const nextMeasurement = measurements[i + 1];
                         patterns.measurementPairs[measurement][nextMeasurement] =
@@ -100,7 +100,7 @@ function App() {
                             ? (patterns.commonThresholds[measurement].reduce((a, b) => a + b, 0) /
                                 patterns.commonThresholds[measurement].length).toFixed(1)
                             : null,
-                        type: 'next-in-sequence'
+                        type: 'next-in-sequence',
                     }));
             }
         }
@@ -108,8 +108,7 @@ function App() {
         if (suggestions.length < 3) {
             const generalSuggestions = Object.entries(patterns.commonMeasurements)
                 .sort(([, a], [, b]) => b - a)
-                .filter(([measurement]) =>
-                    !suggestions.some(s => s.measurement === measurement))
+                .filter(([measurement]) => !suggestions.some((s) => s.measurement === measurement))
                 .slice(0, 3 - suggestions.length)
                 .map(([measurement, frequency]) => ({
                     measurement,
@@ -118,7 +117,7 @@ function App() {
                         ? (patterns.commonThresholds[measurement].reduce((a, b) => a + b, 0) /
                             patterns.commonThresholds[measurement].length).toFixed(1)
                         : null,
-                    type: 'popular'
+                    type: 'popular',
                 }));
 
             suggestions = [...suggestions, ...generalSuggestions];
@@ -137,43 +136,33 @@ function App() {
         setSuggestions(newSuggestions);
     };
 
-    useEffect(() => {
-        const fetchAthletes = async () => {
-            try {
-                const response = await api.get('/athletes');  // API-Aufruf für Athleten
-                setAthletes(response.data);
-            } catch (error) {
-                console.error("Error fetching athletes:", error);
-            }
-        };
-        fetchAthletes();
-    }, []);
+    const addToHistory = useCallback(
+        (treeData) => {
+            setHistory((prevHistory) => {
+                const newHistory = [...prevHistory.slice(0, currentIndex + 1), treeData];
+                setCurrentIndex(newHistory.length - 1); // Korrigierter Index
+                return newHistory;
+            });
+        },
+        [currentIndex]
+    );
 
 
-    // Add to history when tree changes
-    const addToHistory = useCallback((treeData) => {
-        const newHistory = history.slice(0, currentIndex + 1);
-        newHistory.push(treeData);
-        setHistory(newHistory);
-        setCurrentIndex(newHistory.length - 1);
-    }, [history, currentIndex]);
-
-    // Undo function
     const undo = useCallback(() => {
         if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
-            setCurrentTreeData(history[currentIndex - 1]);
+            const newIndex = currentIndex - 1;
+            setCurrentIndex(newIndex);
+            setCurrentTreeData(history[newIndex]); // Restore previous state
         }
     }, [currentIndex, history]);
 
-    // Redo function
     const redo = useCallback(() => {
         if (currentIndex < history.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-            setCurrentTreeData(history[currentIndex + 1]);
+            const newIndex = currentIndex + 1;
+            setCurrentIndex(newIndex);
+            setCurrentTreeData(history[newIndex]); // Restore next state
         }
     }, [currentIndex, history]);
-
 
     const handleDeleteTree = async (treeId) => {
         try {
@@ -194,8 +183,19 @@ function App() {
 
     const handleSaveTree = async () => {
         try {
+            if (!treeRef.current) {
+                console.error("Tree reference is null");
+                return;
+            }
+
             const treeData = treeRef.current.getNodeData();
+            if (!treeData) {
+                console.error("getNodeData() returned null");
+                return;
+            }
+
             addToHistory(treeData);
+
             const response = await api.post('/trees', {rootNode: treeData});
             console.log('Tree saved successfully:', response.data);
             alert('Tree saved successfully!');
@@ -204,6 +204,7 @@ function App() {
             alert('Error saving tree');
         }
     };
+
 
     const handleLoadTrees = async () => {
         try {
@@ -239,8 +240,12 @@ function App() {
                 <h1 className="text-center mb-4">Athlete Diagnosis Tree Builder</h1>
 
                 <nav className="mb-4">
-                    <Link to="/" className="btn btn-secondary me-2">Home</Link>
-                    <Link to="/add-athlete" className="btn btn-primary">Add Athlete</Link>
+                    <Link to="/" className="btn btn-secondary me-2">
+                        Home
+                    </Link>
+                    <Link to="/add-athlete" className="btn btn-primary">
+                        Add Athlete
+                    </Link>
                 </nav>
 
                 <Routes>
@@ -256,12 +261,18 @@ function App() {
                                         <button className="btn btn-secondary me-2" onClick={handleLoadTrees}>
                                             Load Trees
                                         </button>
-                                        <button className="btn btn-info me-2" onClick={undo}
-                                                disabled={currentIndex <= 0}>
+                                        <button
+                                            className="btn btn-info me-2"
+                                            onClick={undo}
+                                            disabled={currentIndex <= 0}
+                                        >
                                             Undo
                                         </button>
-                                        <button className="btn btn-info me-2" onClick={redo}
-                                                disabled={currentIndex >= history.length - 1}>
+                                        <button
+                                            className="btn btn-info me-2"
+                                            onClick={redo}
+                                            disabled={currentIndex >= history.length - 1}
+                                        >
                                             Redo
                                         </button>
                                         <button
@@ -281,8 +292,8 @@ function App() {
                                                     <option value="">Select a tree to load...</option>
                                                     {savedTrees.map((tree) => (
                                                         <option key={tree._id} value={tree._id}>
-                                                            Tree {tree._id} -
-                                                            Created: {new Date(tree.createdAt).toLocaleDateString()}
+                                                            Tree {tree._id} - Created:{' '}
+                                                            {new Date(tree.createdAt).toLocaleDateString()}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -299,6 +310,7 @@ function App() {
                                         )}
                                     </div>
                                 </div>
+
                                 {suggestions.length > 0 && (
                                     <div className="row mb-4">
                                         <div className="col">
@@ -313,7 +325,7 @@ function App() {
                                                             <small className="text-muted d-block">
                                                                 {s.type === 'next-in-sequence'
                                                                     ? `Commonly used after ${lastDroppedMeasurement}`
-                                                                    : 'Popular measurement'}
+                                                                    : 'Popular measurement'}{' '}
                                                                 - Used {s.frequency} times
                                                             </small>
                                                         </li>

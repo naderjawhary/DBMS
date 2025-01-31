@@ -1,64 +1,73 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {fetchSplitCounts} from './api';
 
-const TreeNode = forwardRef(({nodeData, onNodeChange, parentSubset = [], onMeasurementDrop}, ref) => {
+const TreeNode = forwardRef(
+    ({nodeData, onNodeChange, onMeasurementDrop, parentSubset = []}, ref) => {
         const [measurement, setMeasurement] = useState(null);
         const [threshold, setThreshold] = useState('');
         const [isLeaf, setIsLeaf] = useState(false);
-        const [intervention, setIntervention] = useState(''); // Yes / No
-        const leftChildRef = useRef(null);
-        const rightChildRef = useRef(null);
+        const [intervention, setIntervention] = useState('');
         const [leftSubset, setLeftSubset] = useState([]);
         const [rightSubset, setRightSubset] = useState([]);
         const [splitCounts, setSplitCounts] = useState({leftCount: 0, rightCount: 0});
-
-        const getNodeData = () => {
-            if (!measurement) return null;
-            const nodeData = {
-                measurement: measurement,
-                threshold: threshold ? parseFloat(threshold) : null,
-                isLeaf: isLeaf, // Speichert, ob der Knoten ein Leaf ist
-                intervention: intervention, // Speichert den Leaf-Typ ('Yes' oder 'No')
-                children: isLeaf ? null : {
-                    left: leftChildRef.current?.getNodeData() || null,
-                    right: rightChildRef.current?.getNodeData() || null
-                }
-            };
-            return nodeData;
-        };
+        const leftChildRef = useRef(null);
+        const rightChildRef = useRef(null);
 
         useEffect(() => {
-            if (!nodeData) return;
+            if (nodeData) {
+                setMeasurement(nodeData.measurement);
+                setThreshold(nodeData.threshold?.toString() || '');
+                setIsLeaf(nodeData.isLeaf || false);
+                setIntervention(nodeData.intervention || '');
 
-            setMeasurement(nodeData.measurement);
-            setThreshold(nodeData.threshold?.toString() || '');
-            setIsLeaf(nodeData.isLeaf !== undefined ? nodeData.isLeaf : false);
-            setIntervention(nodeData.intervention || '');
-
-            if (nodeData.splitCounts) {
-                setSplitCounts(nodeData.splitCounts);
-            } else if (nodeData.measurement?.id && nodeData.threshold && parentSubset.length > 0) {
-                fetchSplitCounts(nodeData.measurement.id, nodeData.threshold, parentSubset.map(a => a._id))
-                    .then(counts => {
-                        setSplitCounts(counts);
-                    })
-                    .catch(error => console.error("Error fetching split counts for loaded tree:", error));
+                if (nodeData.splitCounts) {
+                    setSplitCounts(nodeData.splitCounts);
+                } else if (nodeData.measurement?.id && nodeData.threshold && parentSubset.length > 0) {
+                    fetchSplitCounts(nodeData.measurement.id, nodeData.threshold, parentSubset.map((a) => a._id))
+                        .then((counts) => {
+                            setSplitCounts(counts);
+                        })
+                        .catch((error) => console.error('Error fetching split counts:', error));
+                }
             }
-        }, [parentSubset, nodeData]);
+        }, [nodeData, parentSubset]);
 
+        useEffect(() => {
+            if (!measurement?.id || !threshold || isLeaf || parentSubset.length === 0) return;
+
+            fetchSplitCounts(measurement.id, threshold, parentSubset.map((a) => a._id))
+                .then((counts) => {
+                    setSplitCounts(counts);
+                })
+                .catch((error) => console.error('Error fetching split counts:', error));
+        }, [measurement, threshold, isLeaf, parentSubset]);
+
+        const getNodeData = () => {
+            return {
+                measurement,
+                threshold: threshold ? parseFloat(threshold) : null,
+                isLeaf,
+                intervention,
+                children: isLeaf
+                    ? null
+                    : {
+                        left: leftChildRef.current?.getNodeData() || null,
+                        right: rightChildRef.current?.getNodeData() || null,
+                    },
+                splitCounts,
+            };
+        };
 
         useImperativeHandle(ref, () => ({
             getNodeData,
-            getCurrentMeasurement: () => measurement
         }));
-
 
         const handleSetLeaf = (value) => {
             setIsLeaf(true);
             setIntervention(value);
             setMeasurement(null);
             setThreshold('');
-            onNodeChange?.(getNodeData());
+            onNodeChange?.(getNodeData()); // Notify parent of change
         };
 
         const handleDragOver = (e) => {
@@ -70,18 +79,8 @@ const TreeNode = forwardRef(({nodeData, onNodeChange, parentSubset = [], onMeasu
             try {
                 const droppedMeasurement = JSON.parse(e.dataTransfer.getData('measurement'));
                 setMeasurement(droppedMeasurement);
-
                 onMeasurementDrop?.(droppedMeasurement);
-
-                const completeNodeData = {
-                    measurement: droppedMeasurement,
-                    threshold: threshold ? parseFloat(threshold) : null,
-                    children: {
-                        left: leftChildRef.current?.getNodeData() || null,
-                        right: rightChildRef.current?.getNodeData() || null
-                    }
-                };
-                onNodeChange?.(completeNodeData);
+                onNodeChange?.(getNodeData()); // Notify parent of change
             } catch (error) {
                 console.error('Error dropping measurement:', error);
             }
@@ -93,38 +92,27 @@ const TreeNode = forwardRef(({nodeData, onNodeChange, parentSubset = [], onMeasu
 
             if (!measurement || !newThreshold || parentSubset.length === 0) return;
 
-            const leftSubset = parentSubset.filter(athlete =>
-                athlete.measurements.some(m => m.id === measurement.id && m.value <= newThreshold)
+            const leftSubset = parentSubset.filter((athlete) =>
+                athlete.measurements.some((m) => m.id === measurement.id && m.value <= newThreshold)
             );
-            const rightSubset = parentSubset.filter(athlete =>
-                athlete.measurements.some(m => m.id === measurement.id && m.value > newThreshold)
+            const rightSubset = parentSubset.filter((athlete) =>
+                athlete.measurements.some((m) => m.id === measurement.id && m.value > newThreshold)
             );
 
             setLeftSubset(leftSubset);
             setRightSubset(rightSubset);
 
-            fetchSplitCounts(measurement.id, newThreshold, parentSubset.map(a => a._id))
-                .then(counts => {
-                    setSplitCounts(counts);
-                })
-                .catch(error => console.error("Error fetching split counts:", error));
-
-            const completeNodeData = {
-                measurement: measurement,
-                threshold: newThreshold ? parseFloat(newThreshold) : null,
-                children: {
-                    left: leftChildRef.current?.getNodeData() || null,
-                    right: rightChildRef.current?.getNodeData() || null
-                }
-            };
-            onNodeChange?.(completeNodeData);
+            onNodeChange?.(getNodeData()); // Notify parent of change
         };
 
+        const handleChildChange = () => {
+            onNodeChange?.(getNodeData()); // Notify parent of change
+        };
 
         return (
             <div className="card shadow-sm mb-3">
                 <div
-                    className={`card-body ${!measurement ? 'bg-light text-muted' : ''}`}
+                    className={`card-body ${!measurement && !isLeaf ? 'bg-light text-muted' : ''}`}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                 >
@@ -146,10 +134,6 @@ const TreeNode = forwardRef(({nodeData, onNodeChange, parentSubset = [], onMeasu
                                 placeholder="Enter threshold..."
                                 value={threshold}
                                 onChange={handleThresholdChange}
-                                onBlur={() => {
-                                    const data = getNodeData();
-                                    onNodeChange?.(data);
-                                }}
                             />
                         </>
                     )}
@@ -169,11 +153,8 @@ const TreeNode = forwardRef(({nodeData, onNodeChange, parentSubset = [], onMeasu
                                 <TreeNode
                                     ref={leftChildRef}
                                     nodeData={nodeData?.children?.left}
-                                     onNodeChange={() => {
-                                         const completeNodeData = getNodeData();
-                                         onNodeChange?.(completeNodeData);
-                                     }}
                                     parentSubset={leftSubset}
+                                    onNodeChange={handleChildChange} // Propagate child changes
                                     onMeasurementDrop={onMeasurementDrop}
                                 />
                             </div>
@@ -182,27 +163,28 @@ const TreeNode = forwardRef(({nodeData, onNodeChange, parentSubset = [], onMeasu
                                 <TreeNode
                                     ref={rightChildRef}
                                     nodeData={nodeData?.children?.right}
-                                    onNodeChange={() => {
-                                        const completeNodeData = getNodeData();
-                                        onNodeChange?.(completeNodeData);
-                                    }}
                                     parentSubset={rightSubset}
+                                    onNodeChange={handleChildChange} // Propagate child changes
                                     onMeasurementDrop={onMeasurementDrop}
                                 />
                             </div>
                         </div>
                     </>
                 )}
+
                 {!measurement && !isLeaf && (
                     <div className="text-center mt-3">
-                        <button className="btn btn-success me-2" onClick={() => handleSetLeaf('Yes')}>Intervention: Yes
+                        <button className="btn btn-success me-2" onClick={() => handleSetLeaf('Yes')}>
+                            Intervention: Yes
                         </button>
-                        <button className="btn btn-danger" onClick={() => handleSetLeaf('No')}>Intervention: No</button>
+                        <button className="btn btn-danger" onClick={() => handleSetLeaf('No')}>
+                            Intervention: No
+                        </button>
                     </div>
                 )}
             </div>
         );
-    })
-;
+    }
+);
 
 export default TreeNode;
