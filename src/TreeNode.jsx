@@ -19,9 +19,21 @@ const TreeNode = forwardRef(({ nodeData, onNodeChange, parentSubset = [] }, ref)
                 setThreshold(nodeData.threshold?.toString() || '');
                 setIsLeaf(nodeData.isLeaf !== undefined ? nodeData.isLeaf : false);
                 setIntervention(nodeData.intervention || '');
-            }
-        }, [nodeData]);
 
+                // 🛠️ Falls `nodeData` bereits `splitCounts` enthält (z.B. aus der DB), setzen wir diese direkt
+                if (nodeData.splitCounts) {
+                    setSplitCounts(nodeData.splitCounts);
+                } else if (nodeData.measurement?.id && nodeData.threshold && parentSubset.length > 0) {
+                    // 🔥 Falls keine gespeicherten `splitCounts` existieren, rufen wir `fetchSplitCounts` erneut auf
+                    fetchSplitCounts(nodeData.measurement.id, nodeData.threshold, parentSubset.map(a => a._id))
+                        .then(counts => {
+                            console.log("Fetched splitCounts for loaded tree:", counts);
+                            setSplitCounts(counts);
+                        })
+                        .catch(error => console.error("Error fetching split counts for loaded tree:", error));
+                }
+            }
+        }, [nodeData, parentSubset]);
 
         useEffect(() => {
             if (!measurement?.id || !threshold || isLeaf || parentSubset.length === 0) {

@@ -19,7 +19,6 @@ function App() {
         const fetchAthletes = async () => {
             try {
                 const response = await api.get('/athletes');  // API-Aufruf für Athleten
-                console.log("Fetched Athletes:", response.data);
                 setAthletes(response.data);
             } catch (error) {
                 console.error("Error fetching athletes:", error);

@@ -7,11 +7,9 @@ router.get('/', async (req, res) => {
     try {
         // Alle Athleten abrufen
         const athletes = await Athlete.find();
-        console.log("Fetched Athletes:", athletes); // Debugging
 
         // Alle Messwerte extrahieren
         const allMeasurements = athletes.flatMap((athlete) => athlete.measurements);
-        console.log("Extracted Measurements:", allMeasurements); // Debugging
 
         // Einzigartige Messwerte basierend auf `id` und `name` filtern
         const uniqueMeasurements = Array.from(
