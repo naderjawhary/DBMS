@@ -9,8 +9,6 @@ const MeasurementSchema = new mongoose.Schema({
 
 const AthleteSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  age: { type: Number, required: true },
-  gender: { type: Number, enum: [0, 1], required: true }, // 0 = Male, 1 = Female
   measurements: [MeasurementSchema],
 });
 
