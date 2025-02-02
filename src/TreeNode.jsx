@@ -13,6 +13,7 @@ const TreeNode = forwardRef(
         const leftChildRef = useRef(null);
         const rightChildRef = useRef(null);
 
+
         useEffect(() => {
             if (nodeData) {
                 setMeasurement(nodeData.measurement);
@@ -126,7 +127,7 @@ const TreeNode = forwardRef(
                         <>
                             <div className="d-flex justify-content-between align-items-center">
                                 <strong>{measurement.name}</strong>
-                                <span className="text-muted">({measurement.unit})</span>
+                                {measurement.name !== "Gender" && <span className="text-muted">({measurement.unit})</span>}
                             </div>
                             <input
                                 type="number"
@@ -134,6 +135,7 @@ const TreeNode = forwardRef(
                                 placeholder="Enter threshold..."
                                 value={threshold}
                                 onChange={handleThresholdChange}
+                                // hidden={measurement.name === "Gender"}
                             />
                         </>
                     )}
@@ -141,15 +143,15 @@ const TreeNode = forwardRef(
 
                 {!isLeaf && measurement && threshold && (
                     <>
-                        <div className="text-center mt-3">
-                            <p>Split Athletes:</p>
-                            <p>&le; {threshold}: {splitCounts.leftCount}</p>
-                            <p>&gt; {threshold}: {splitCounts.rightCount}</p>
-                        </div>
-
                         <div className="row mt-3">
+                            <div className="text-center">Split Athletes:</div>
                             <div className="col-md-6">
-                                <div className="text-center text-success">&le; {threshold}</div>
+                                <div className="text-center text-success">
+                                    {measurement?.name === "Gender"
+                                        ? (threshold === "0" ? "Male" : "Female")
+                                        : `≤ ${threshold}`
+                                    }: {splitCounts.leftCount}
+                                </div>
                                 <TreeNode
                                     ref={leftChildRef}
                                     nodeData={nodeData?.children?.left}
@@ -159,7 +161,13 @@ const TreeNode = forwardRef(
                                 />
                             </div>
                             <div className="col-md-6">
-                                <div className="text-center text-danger">&gt; {threshold}</div>
+                                <div className="text-center text-danger">
+                                    {measurement?.name === "Gender"
+                                        ? (threshold === "0" ? "Female" : "Male")
+                                        : `> ${threshold}`
+                                    }: {splitCounts.rightCount}
+                                </div>
+
                                 <TreeNode
                                     ref={rightChildRef}
                                     nodeData={nodeData?.children?.right}
@@ -173,7 +181,7 @@ const TreeNode = forwardRef(
                 )}
 
                 {!measurement && !isLeaf && (
-                    <div className="text-center mt-3">
+                    <div className="text-center mt-3 mb-2">
                         <button className="btn btn-success me-2" onClick={() => handleSetLeaf('Yes')}>
                             Intervention: Yes
                         </button>

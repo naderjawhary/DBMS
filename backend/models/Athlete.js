@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const MeasurementSchema = new mongoose.Schema({
   id: { type: Number, required: true },
   name: { type: String, required: true },
-  value: { type: Number, required: true }, // Wert als Zahl erzwingen
+  value: { type: Number, required: true },
   unit: { type: String, required: false },
 });
 
@@ -13,3 +13,5 @@ const AthleteSchema = new mongoose.Schema({
 });
 
 export default mongoose.model('Athlete', AthleteSchema);
+
+

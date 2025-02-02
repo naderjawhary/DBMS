@@ -153,6 +153,7 @@ function App() {
             const newIndex = currentIndex - 1;
             setCurrentIndex(newIndex);
             setCurrentTreeData(history[newIndex]); // Restore previous state
+            console.log('Undo:', history);
         }
     }, [currentIndex, history]);
 
@@ -161,6 +162,7 @@ function App() {
             const newIndex = currentIndex + 1;
             setCurrentIndex(newIndex);
             setCurrentTreeData(history[newIndex]); // Restore next state
+            console.log('Undo:', history);
         }
     }, [currentIndex, history]);
 

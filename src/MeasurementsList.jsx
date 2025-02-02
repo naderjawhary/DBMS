@@ -1,4 +1,4 @@
-import  { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 function MeasurementsList() {
   const [measurements, setMeasurements] = useState([]);
@@ -42,7 +42,7 @@ function MeasurementsList() {
                 draggable="true"
                 onDragStart={(e) => handleDragStart(e, measurement)}
               >
-                {measurement.name} ({measurement.unit})
+                {measurement.name} {measurement.name !== "Gender" && <>({measurement.unit})</>}
                 <span className="badge bg-secondary">Drag</span>
               </li>
             ))}
