@@ -86,7 +86,7 @@ function AddAthleteForm() {
         {athlete.measurements.map((measurement) => (
           <div className="mb-3" key={measurement.id}>
             <label className="form-label">
-              {measurement.name} ({measurement.unit || 'N/A'})
+              {measurement.name} {measurement.name !== "Gender" && <>({measurement.unit || 'N/A'})</>}
             </label>
             {measurement.name === 'Gender' ? (
               <select

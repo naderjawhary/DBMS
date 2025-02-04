@@ -279,17 +279,11 @@ function App() {
                                             Undo
                                         </button>
                                         <button
-                                            className="btn btn-info me-2"
+                                            className="btn btn-info"
                                             onClick={redo}
                                             disabled={currentIndex >= history.length - 1}
                                         >
                                             Redo
-                                        </button>
-                                        <button
-                                            className="btn btn-secondary"
-                                            onClick={async () => updateSuggestions(lastDroppedMeasurement)}
-                                        >
-                                            Get Suggestions
                                         </button>
                                     </div>
                                     <div className="col-md-6 d-flex">
@@ -321,43 +315,48 @@ function App() {
                                     </div>
                                 </div>
 
-                                {suggestions.length > 0 && (
-                                    <div className="row mb-4">
-                                        <div className="col">
-                                            <div className="p-3 bg-light border rounded">
-                                                <h5>Suggestions based on your current tree:</h5>
-                                                <ul className="list-unstyled">
-                                                    {suggestions.map((s, i) => (
-                                                        <li key={i} className="mb-2">
-                                                            <strong>{s.measurement}</strong>
-                                                            {s.suggestedThreshold &&
-                                                                ` (Suggested threshold: ${s.suggestedThreshold})`}
-                                                            <small className="text-muted d-block">
-                                                                {s.type === 'next-in-sequence'
-                                                                    ? `Commonly used after ${lastDroppedMeasurement}`
-                                                                    : 'Popular measurement'}{' '}
-                                                                - Used {s.frequency} times
-                                                            </small>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
                                 <div className="row">
                                     {sidebarOpen && (
-                                        <div className="col-lg-3">
+                                        <div className="col-lg-2">
                                             <MeasurementsList/>
+                                            {suggestions.length === 0 && (
+                                                <button className="btn btn-info w-100" onClick={async () => updateSuggestions(lastDroppedMeasurement)}>
+                                                    Get Suggestions
+                                                </button>
+                                            )}
+                                            {suggestions.length > 0 && (
+                                                <div className="card shadow-sm">
+                                                    <div className="card-header bg-info text-white">
+                                                        <h5 className="mb-0">Suggestions</h5>
+                                                    </div>
+                                                    <div className="card-body">
+                                                        <ul className="list-unstyled">
+                                                            {suggestions.map((s, i) => (
+                                                                <li key={i} className="mb-2">
+                                                                    <strong>{s.measurement}</strong>
+                                                                    {s.suggestedThreshold && ` (Suggested threshold: ${s.suggestedThreshold})`}
+                                                                    <small className="text-muted d-block">
+                                                                        {s.type === 'next-in-sequence' ? `Commonly used after` : 'Popular measurement'} -
+                                                                        Used {s.frequency} times
+                                                                    </small>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-                                    <div className={`col ${sidebarOpen ? 'col-lg-9' : 'col-lg-12'}`}>
+                                    <div className={`col ${sidebarOpen ? 'col-lg-10' : 'col-lg-12'}`}>
                                         <button
-                                            className={`btn btn-${sidebarOpen ? 'danger' : 'primary'} mb-3`}
+                                            className={`btn btn-${sidebarOpen ? 'danger' : 'primary'} mb-3 me-2`}
                                             onClick={() => setSidebarOpen(!sidebarOpen)}
                                         >
                                             {sidebarOpen ? 'Hide Measurements' : 'Show Measurements'}
+                                        </button>
+                                        <button className="btn btn-danger mb-3"
+                                                onClick={() => window.location.reload()}>
+                                            Reset
                                         </button>
                                         <div className="tree-container p-3 border rounded bg-light">
                                             <TreeNode
@@ -369,6 +368,7 @@ function App() {
                                             />
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
                         }
