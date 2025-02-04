@@ -18,7 +18,6 @@ function App() {
     const [lastDroppedMeasurement, setLastDroppedMeasurement] = useState(null);
 
     useEffect(() => {
-        console.log(history, currentIndex);
         const fetchAthletes = async () => {
             try {
                 const response = await api.get('/athletes');
@@ -245,7 +244,6 @@ function App() {
             alert('Error loading selected tree');
         }
     };
-    console.log(history.length, currentIndex)
     return (
         <Router>
             <div className="container-fluid py-4">
