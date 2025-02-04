@@ -28,8 +28,6 @@ router.post('/', async (req, res) => {
 router.post('/split', async (req, res) => {
     const { measurementId, threshold, subset } = req.body;
 
-    console.log("Received Data:", { measurementId, threshold, subset });
-
     if (!measurementId || !threshold || !subset || !Array.isArray(subset) || subset.length === 0) {
         return res.status(400).json({ error: 'Missing or invalid parameters' });
     }
@@ -42,11 +40,8 @@ router.post('/split', async (req, res) => {
             return res.status(400).json({ error: 'Invalid measurementId or threshold' });
         }
 
-        console.log("Parsed Values:", { parsedMeasurementId, parsedThreshold });
-
         // Finde die Athleten, die gefiltert werden
         const filteredAthletes = await Athlete.find({ _id: { $in: subset } });
-        console.log("Filtered Athletes:", filteredAthletes);
 
         // Überprüfe, ob die Messwerte korrekt im Schema sind
         const leftCount = filteredAthletes.filter(athlete =>
@@ -56,8 +51,6 @@ router.post('/split', async (req, res) => {
         const rightCount = filteredAthletes.filter(athlete =>
             athlete.measurements.some(m => m.id === parsedMeasurementId && m.value > parsedThreshold)
         ).length;
-
-        console.log("Split Results:", { leftCount, rightCount });
 
         res.json({ leftCount, rightCount });
     } catch (error) {

@@ -13,6 +13,13 @@ const TreeNode = forwardRef(
         const leftChildRef = useRef(null);
         const rightChildRef = useRef(null);
 
+        useEffect(() => {
+            const newNodeData = getNodeData();
+            if (JSON.stringify(newNodeData) !== JSON.stringify(nodeData)) {
+                onNodeChange?.(newNodeData);
+            }
+        }, [measurement, threshold, isLeaf, intervention, leftSubset, rightSubset]);
+
 
         useEffect(() => {
             if (nodeData) {
@@ -55,7 +62,7 @@ const TreeNode = forwardRef(
                         left: leftChildRef.current?.getNodeData() || null,
                         right: rightChildRef.current?.getNodeData() || null,
                     },
-                splitCounts,
+                // splitCounts,
             };
         };
 
@@ -68,7 +75,7 @@ const TreeNode = forwardRef(
             setIntervention(value);
             setMeasurement(null);
             setThreshold('');
-            onNodeChange?.(getNodeData()); // Notify parent of change
+            // onNodeChange?.(getNodeData()); // Notify parent of change
         };
 
         const handleDragOver = (e) => {
@@ -79,17 +86,19 @@ const TreeNode = forwardRef(
             e.preventDefault();
             try {
                 const droppedMeasurement = JSON.parse(e.dataTransfer.getData('measurement'));
-                setMeasurement(droppedMeasurement);
-                onMeasurementDrop?.(droppedMeasurement);
-                onNodeChange?.(getNodeData()); // Notify parent of change
+                if (droppedMeasurement?.id !== measurement?.id) {
+                    setMeasurement(droppedMeasurement);
+                    onMeasurementDrop?.(droppedMeasurement);
+                    onNodeChange?.(getNodeData()); // Nur wenn eine neue Messung hinzugefügt wurde
+                }
             } catch (error) {
                 console.error('Error dropping measurement:', error);
             }
         };
 
+
         const handleThresholdChange = (e) => {
             const newThreshold = e.target.value;
-            setThreshold(newThreshold);
 
             if (!measurement || !newThreshold || parentSubset.length === 0) return;
 
@@ -103,12 +112,18 @@ const TreeNode = forwardRef(
             setLeftSubset(leftSubset);
             setRightSubset(rightSubset);
 
-            onNodeChange?.(getNodeData()); // Notify parent of change
+            if (newThreshold !== threshold) {
+                setThreshold(newThreshold);
+                onNodeChange?.(getNodeData()); // Nur wenn sich der Wert tatsächlich ändert
+            }
         };
 
         const handleChildChange = () => {
-            onNodeChange?.(getNodeData()); // Notify parent of change
+            if (onNodeChange) {
+                onNodeChange(getNodeData());
+            }
         };
+
 
         return (
             <div className="card shadow-sm mb-3">

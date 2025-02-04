@@ -11,13 +11,14 @@ function App() {
     const [savedTrees, setSavedTrees] = useState([]);
     const [currentTreeData, setCurrentTreeData] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [history, setHistory] = useState([]);
+    const [history, setHistory] = useState(() => []);
     const [currentIndex, setCurrentIndex] = useState(-1);
     const [showTreeSelect, setShowTreeSelect] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
     const [lastDroppedMeasurement, setLastDroppedMeasurement] = useState(null);
 
     useEffect(() => {
+        console.log(history, currentIndex);
         const fetchAthletes = async () => {
             try {
                 const response = await api.get('/athletes');
@@ -139,8 +140,14 @@ function App() {
     const addToHistory = useCallback(
         (treeData) => {
             setHistory((prevHistory) => {
+                if (prevHistory.length > 0) {
+                    const lastState = prevHistory[prevHistory.length - 1];
+                    if (JSON.stringify(lastState) === JSON.stringify(treeData)) {
+                        return prevHistory; // Verhindert doppeltes Speichern
+                    }
+                }
                 const newHistory = [...prevHistory.slice(0, currentIndex + 1), treeData];
-                setCurrentIndex(newHistory.length - 1); // Korrigierter Index
+                setCurrentIndex(currentIndex + 1);
                 return newHistory;
             });
         },
@@ -149,22 +156,25 @@ function App() {
 
 
     const undo = useCallback(() => {
-        if (currentIndex > 0) {
-            const newIndex = currentIndex - 1;
-            setCurrentIndex(newIndex);
-            setCurrentTreeData(history[newIndex]); // Restore previous state
-            console.log('Undo:', history);
-        }
-    }, [currentIndex, history]);
+        setCurrentIndex((prevIndex) => {
+            if (prevIndex > 0) {
+                setCurrentTreeData(history[prevIndex - 1]);
+                return prevIndex - 1;
+            }
+            return prevIndex;
+        });
+    }, [history]);
 
     const redo = useCallback(() => {
-        if (currentIndex < history.length - 1) {
-            const newIndex = currentIndex + 1;
-            setCurrentIndex(newIndex);
-            setCurrentTreeData(history[newIndex]); // Restore next state
-            console.log('Undo:', history);
-        }
-    }, [currentIndex, history]);
+        setCurrentIndex((prevIndex) => {
+            if (prevIndex < history.length - 1) {
+                setCurrentTreeData(history[prevIndex + 1]);
+                return prevIndex + 1;
+            }
+            return prevIndex;
+        });
+    }, [history]);
+
 
     const handleDeleteTree = async (treeId) => {
         try {
@@ -174,7 +184,7 @@ function App() {
             await handleLoadTrees();
             if (currentTreeData) {
                 setCurrentTreeData(null);
-                setHistory([]);
+                setHistory(() => []);
                 setCurrentIndex(-1);
             }
         } catch (error) {
@@ -235,7 +245,7 @@ function App() {
             alert('Error loading selected tree');
         }
     };
-
+    console.log(history.length, currentIndex)
     return (
         <Router>
             <div className="container-fluid py-4">
